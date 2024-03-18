@@ -6,6 +6,13 @@ import { BaseUrlService } from '../services/base-url.service';
 import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+interface Message {
+  message: string;
+  fromSelf: boolean;
+  tempId?: number;
+  messageId?: number;
+}
+
 @Component({
   selector: 'app-chat-window',
   standalone: true,
@@ -16,7 +23,7 @@ import { FormsModule } from '@angular/forms';
 export class ChatWindowComponent implements OnInit {
 
   private socket: any;
-  messages: { message: string, fromSelf: boolean }[] = [];
+  messages: Message[] = [];
   newMessage: string = '';
   users: any[] = [];
   selectedUserId: number | null = null;
@@ -49,8 +56,6 @@ export class ChatWindowComponent implements OnInit {
     } catch (err) { console.error(err); }
   }
 
-
-
   fetchUsers() {
     const headers = { 'Authorization': 'Bearer ' + localStorage.getItem('token') };
     this.http.get<any[]>(`${this.baseUrlService.baseUrl}/api/users`, { headers }).subscribe(users => {
@@ -76,47 +81,59 @@ export class ChatWindowComponent implements OnInit {
       });
   }
 
-
   listenForMessages(): void {
-    this.socket.on('newMessage', (newMessage: any) => {
-      console.log("Received message:", newMessage);
-      if (newMessage.receiver_id == this.selectedUserId || newMessage.sender_id == this.selectedUserId) {
+    this.socket.on('newMessage', (message: any) => {
+      const userId = Number(localStorage.getItem('userId'));
+      const existingMessageIndex = this.messages.findIndex(m => m.tempId === message.tempId);
+      if (existingMessageIndex !== -1) {
+        this.messages[existingMessageIndex].messageId = message.messageId;
+        delete this.messages[existingMessageIndex].tempId;
+      } else {
         this.messages.push({
-          message: newMessage.message_text,
-          fromSelf: newMessage.sender_id === Number(localStorage.getItem('userId')),
+          message: message.message_text,
+          fromSelf: message.sender_id === userId,
+          messageId: message.messageId,
         });
-        this.scrollToBottom();
       }
-    });
-
-    this.socket.on('receiveMessage', (newMessage: any) => {
-      if (newMessage.fromUserId === this.selectedUserId || newMessage.toUserId === this.selectedUserId) {
-        this.messages.push({ message: newMessage.content, fromSelf: newMessage.fromSelf });
-        this.scrollToBottom();
-      }
+      this.scrollToBottom();
     });
   }
-
 
   sendMessage(): void {
     if (!this.newMessage.trim()) return;
 
-    const id = localStorage.getItem('userId');
-    const headers = { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' };
-    const body = { sender_id: id, receiver_id: this.selectedUserId, message_text: this.newMessage };
+    const userId = Number(localStorage.getItem('userId'));
+    const tempId = Date.now();
+    const body = {
+      sender_id: userId,
+      receiver_id: this.selectedUserId,
+      message_text: this.newMessage,
+      tempId,
+    };
+
+    this.messages.push({
+      message: this.newMessage,
+      fromSelf: true,
+      tempId,
+    });
+    this.newMessage = '';
+
+    const headers = {
+      'Authorization': 'Bearer ' + localStorage.getItem('token'),
+      'Content-Type': 'application/json',
+    };
 
     this.http.post(`${this.baseUrlService.baseUrl}/api/messages`, body, { headers }).subscribe({
-      next: (response) => {
-        this.scrollToBottom();
-        console.log("Message saved successfully", response);
-        this.socket.emit('sendMessage', { userId: this.selectedUserId, message: this.newMessage });
-        this.messages.push({ message: this.newMessage, fromSelf: true });
-        this.newMessage = '';
+      next: (response: any) => {
+        const index = this.messages.findIndex(m => m.tempId === tempId);
+        if (index !== -1) {
+          this.messages[index].messageId = response.messageId;
+          delete this.messages[index].tempId;
+        }
       },
-      error: (error) => console.error('Error sending message:', error)
+      error: (error) => console.error('Error sending message:', error),
     });
   }
-
 
   logout() {
     this.router.navigate(['/logout']);
