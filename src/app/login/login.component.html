@@ -1,0 +1,24 @@
+<main class="form-signin text-center">
+  <form action="#" method="post">
+    <img class="mb-4" src="../../assets/logo.png" alt="" width="75" height="75">
+    <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
+
+    <div class="form-floating">
+      <input type="email" [(ngModel)]="email" name="email" class="form-control" id="floatingInput"
+        placeholder="name@example.com" required />
+      <label for="floatingInput">Email address</label>
+    </div>
+    <div class="form-floating">
+      <input type="password" [(ngModel)]="password" name="password" class="form-control" id="floatingPassword"
+        placeholder="Password" required />
+      <label for="floatingPassword">Password</label>
+    </div>
+
+    <div class="checkbox mb-3">
+      <label>
+        <input type="checkbox" value="remember-me"> Remember me
+      </label>
+    </div>
+    <button class="w-100 btn btn-lg btn-primary" type="submit" (click)="login()">Sign in</button>
+  </form>
+</main>

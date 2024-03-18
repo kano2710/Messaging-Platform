@@ -1,0 +1,58 @@
+<section class="d-flex flex-column h-100">
+    <header>
+        <nav class="navbar navbar-expand-md navbar-light fixed-top bg-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" style="color: black;">Chat Application</a>
+            </div>
+            <ul class="navbar-nav ml-auto d-flex align-items-center">
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout" (click)="logout()">
+                        <i class="fas fa-sign-out-alt" style="height: 30px;"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="flex-shrink-0" style="margin: 65px 0 10px 0;">
+        <div class="container-fluid h-100">
+            <div class="row h-100 gap">
+                <div class="chat-container col-md-3 h-100"
+                    style="overflow-y: auto; padding-right: 5px; height: calc(100vh - 65px - 10px);">
+                    <div class="clearfix">
+                        <div *ngFor="let user of users" (click)="selectUser(user.id)">
+                            <h3 style="padding: 10px 10px 0;">{{ user.username }}</h3>
+                            <hr>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-container col-md-9 d-flex flex-column h-100" style="padding-left: 5px;"
+                    *ngIf="selectedUser">
+                    <div *ngIf="selectedUser" class="selected-user-name" style="padding: 10px;">
+                        Chatting with <strong>{{ selectedUser.username }}</strong>
+                    </div>
+                    <div class="chat-messages flex-grow-1" #scrollMe>
+                        <div *ngFor="let message of messages">
+                            <div class="clearfix">
+                                <div class="chat-bubble" [class.outgoing]="message.fromSelf"
+                                    [class.incoming]="!message.fromSelf">
+                                    {{ message.message }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input" style="padding: 10px;">
+                        <input type="text" class="form-control" [(ngModel)]="newMessage" (keyup.enter)="sendMessage()"
+                            placeholder="Type a message...">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container" id="footer">
+            <span class="text-muted">Made with &#10084; by <i><b>Dharam Dhameliya</b></i></span>
+        </div>
+    </footer>
+</section>
